@@ -2,8 +2,6 @@ package backoff
 
 import (
 	"context"
-	"fmt"
-	"sync"
 	"testing"
 	"time"
 )
@@ -77,47 +75,4 @@ func TestWaitDeadline(t *testing.T) {
 
 func testAfterAccuracy(actual time.Time, expect time.Time, d time.Duration) bool {
 	return actual.After(expect) && actual.Sub(expect) <= d
-}
-
-type tWaiter struct {
-	c chan error
-}
-
-func (w *tWaiter) Wait() error {
-	return <-w.c
-}
-
-func TestBroadcastCancel(t *testing.T) {
-	tab := []int{0, 1, 2, 10}
-	for _, v := range tab {
-		var w tWaiter
-		b := NewBroadcast(&w)
-		c := make(chan error, v)
-		t.Run(fmt.Sprintf("N=%d", v), func(t *testing.T) {
-			var wg sync.WaitGroup
-			for i := 0; i < v; i++ {
-				wg.Add(1)
-				go func() {
-					c <- b.Wait()
-					wg.Done()
-				}()
-			}
-			go func() {
-				wg.Wait()
-				close(c)
-			}()
-			<-time.After(1 * time.Millisecond) // HACK
-			b.Cancel()
-
-			var n int
-			for err := range c {
-				if err != nil {
-					n++
-				}
-			}
-			if n != v {
-				t.Errorf("number of respond error = %d; want %d", n, v)
-			}
-		})
-	}
 }
