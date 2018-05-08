@@ -19,21 +19,21 @@ type Waiter interface {
 	Wait() error
 }
 
-type Exponent struct {
+type Backoff struct {
 	Peak time.Duration
 
 	ctx context.Context
 	n   time.Duration
 }
 
-func New(ctx context.Context) *Exponent {
-	return &Exponent{
+func New(ctx context.Context) *Backoff {
+	return &Backoff{
 		ctx: ctx,
 		n:   interval,
 	}
 }
 
-func (p *Exponent) Wait() (err error) {
+func (p *Backoff) Wait() (err error) {
 	n := p.n
 	if p.Peak > 0 && n > p.Peak {
 		n = p.Peak
