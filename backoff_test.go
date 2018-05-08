@@ -77,6 +77,27 @@ func TestWaitWithPeak(t *testing.T) {
 	}
 }
 
+func TestWaitNext(t *testing.T) {
+	var w Backoff
+	w.Initial = 10 * time.Millisecond
+	c := context.Background()
+
+	tab := []struct {
+		Next time.Duration
+		Want time.Duration
+	}{
+		{Want: w.Initial},
+		{Want: 5 * time.Millisecond, Next: 5 * time.Millisecond},
+		{Want: w.Initial * 4},
+	}
+	for _, v := range tab {
+		if v.Next > 0 {
+			w.Next = v.Next
+		}
+		testWait(t, c, &w, v.Want)
+	}
+}
+
 func TestWaitDeadline(t *testing.T) {
 	t0 := time.Now()
 	timeout := tInterval / 2

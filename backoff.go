@@ -42,8 +42,10 @@ func (p *Backoff) advance() time.Duration {
 		p.d *= multiplier
 	}
 	p.n++
-	if p.Next > 0 {
-		return p.Next
+	d := p.Next
+	p.Next = 0
+	if d > 0 {
+		return d
 	}
 	return p.d
 }
