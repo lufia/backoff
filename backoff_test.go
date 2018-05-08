@@ -17,12 +17,19 @@ type tRange struct {
 	End   time.Duration
 }
 
+func (r *tRange) weighted() (time.Duration, time.Duration) {
+	w := r.Begin / weightDiv
+	return r.Begin - w, r.End + w
+}
+
 func (r *tRange) String() string {
-	return fmt.Sprintf("%v..%v", r.Begin, r.End)
+	bp, ep := r.weighted()
+	return fmt.Sprintf("%v..%v", bp, ep)
 }
 
 func (r *tRange) In(d time.Duration) bool {
-	return d >= r.Begin && d <= r.End
+	bp, ep := r.weighted()
+	return d >= bp && d < ep
 }
 
 func testWait(t *testing.T, c context.Context, w *Backoff, v time.Duration) {
@@ -100,7 +107,7 @@ func TestWaitNext(t *testing.T) {
 
 func TestWaitDeadline(t *testing.T) {
 	t0 := time.Now()
-	timeout := tInterval / 2
+	timeout := tInterval / 4
 
 	var w Backoff
 	w.Initial = tInterval
