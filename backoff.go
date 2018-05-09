@@ -66,7 +66,7 @@ func (p *Backoff) advance() time.Duration {
 	return weighted(p.d)
 }
 
-// Wait waits next activation.
+// Wait blocks until next activation available, or ctx is cancelled.
 func (p *Backoff) Wait(ctx context.Context) error {
 	d := p.advance()
 	if p.Peak > 0 && d > p.Peak {
