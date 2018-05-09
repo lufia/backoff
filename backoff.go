@@ -3,6 +3,7 @@ package backoff
 
 import (
 	"context"
+	"errors"
 	"math/rand"
 	"time"
 )
@@ -31,8 +32,10 @@ type Backoff struct {
 	// It will reset to zero after consumed.
 	Next time.Duration
 
-	Limit int           // not implemented
-	Age   time.Duration // not implemented
+	// Limit is maximum retry count
+	Limit int
+
+	Age time.Duration // not implemented
 
 	n int
 	d time.Duration
@@ -66,8 +69,15 @@ func (p *Backoff) advance() time.Duration {
 	return weighted(p.d)
 }
 
+var (
+	errLimitReached = errors.New("retry limit reached")
+)
+
 // Wait blocks until next activation available, or ctx is cancelled.
 func (p *Backoff) Wait(ctx context.Context) error {
+	if p.Limit > 0 && p.n >= p.Limit {
+		return errLimitReached
+	}
 	d := p.advance()
 	if p.Peak > 0 && d > p.Peak {
 		d = p.Peak

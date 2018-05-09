@@ -2,6 +2,7 @@ package backoff
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -123,4 +124,47 @@ func TestWaitDeadline(t *testing.T) {
 	if !r.In(d) {
 		t.Errorf("Wait(%v): ellapsed %v; want %v", timeout, d, r)
 	}
+}
+
+func Example() {
+	// retryable function
+	f := func(i int) error {
+		if i < 3 {
+			return errors.New("fail")
+		}
+		return nil
+	}
+
+	// w is backoff [1s, 2s, 4s, 8s, 16s, ...]
+	var w Backoff
+	var i int
+	for err := f(i); err != nil; err = f(i) {
+		if err := w.Wait(context.Background()); err != nil {
+			fmt.Println(err)
+		}
+		i++
+	}
+	// Output:
+}
+
+func Example_limited() {
+	// retryable function
+	f := func() error {
+		return errors.New("fail")
+	}
+
+	// w is backoff [500ms, 1s, 2s, 2s, 2s]
+	w := Backoff{
+		Initial: 500 * time.Millisecond,
+		Peak:    2 * time.Second,
+		Limit:   5,
+	}
+	for err := f(); err != nil; err = f() {
+		if err := w.Wait(context.Background()); err != nil {
+			fmt.Println(err)
+			break
+		}
+	}
+	// Output:
+	// retry limit reached
 }
