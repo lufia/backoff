@@ -31,10 +31,12 @@ type Backoff struct {
 	// Limit is maximum retry count.
 	Limit int
 
-	Age time.Duration // not implemented
+	// MaxAge is maximum time until Backoff is force expired.
+	MaxAge time.Duration
 
 	n    int           // retry count
 	d    time.Duration // most recent waiting time
+	age  time.Duration // total time
 	next time.Duration
 }
 
@@ -51,8 +53,8 @@ func weighted(d time.Duration) time.Duration {
 	return d - w + time.Duration(n)
 }
 
-// advance advances p's timers, then returns next duration of Wait().
-// this method don't consider p's limitations: Peak, Limit, or Age.
+// Advance advances p's timers, then returns next duration of Wait().
+// this method don't consider p's limitations: Peak, Limit, or MaxAge.
 func (p *Backoff) advance() time.Duration {
 	if p.n == 0 {
 		p.d = defaultInterval
@@ -65,10 +67,11 @@ func (p *Backoff) advance() time.Duration {
 	p.n++
 	d := p.next
 	p.next = 0
-	if d > 0 {
-		return d
+	if d <= 0 {
+		d = weighted(p.d)
 	}
-	return weighted(p.d)
+	p.age += d
+	return d
 }
 
 var (

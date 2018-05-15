@@ -129,7 +129,7 @@ func TestWaitDeadline(t *testing.T) {
 func Example() {
 	// retryable function
 	f := func(i int) error {
-		if i < 3 {
+		if i < 2 {
 			return errors.New("fail")
 		}
 		return nil
@@ -153,10 +153,10 @@ func Example_limited() {
 		return errors.New("fail")
 	}
 
-	// w is backoff [500ms, 1s, 2s, 2s, 2s]
+	// w is backoff [100ms, 200ms, 200ms, 200ms, 200ms]
 	w := Backoff{
-		Initial: 500 * time.Millisecond,
-		Peak:    2 * time.Second,
+		Initial: 100 * time.Millisecond,
+		Peak:    200 * time.Millisecond,
 		Limit:   5,
 	}
 	for err := f(); err != nil; err = f() {
