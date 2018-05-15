@@ -32,7 +32,7 @@ type Backoff struct {
 	// It will reset to zero after consumed.
 	Next time.Duration
 
-	// Limit is maximum retry count
+	// Limit is maximum retry count.
 	Limit int
 
 	Age time.Duration // not implemented
