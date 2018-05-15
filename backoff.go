@@ -53,7 +53,7 @@ func weighted(d time.Duration) time.Duration {
 	return d - w + time.Duration(n)
 }
 
-// Advance advances p's timers, then returns next duration of Wait().
+// advance returns a duration between now and next period.
 // this method don't consider p's limitations: Peak, Limit, or MaxAge.
 func (p *Backoff) advance() time.Duration {
 	if p.n == 0 {
@@ -67,30 +67,44 @@ func (p *Backoff) advance() time.Duration {
 	p.n++
 	d := p.next
 	p.next = 0
-	if d <= 0 {
-		d = weighted(p.d)
+	if d > 0 {
+		return d
 	}
-	p.age += d
-	return d
+	return weighted(p.d)
 }
 
 var (
 	errLimitReached = errors.New("retry limit reached")
+	errExpired      = errors.New("operation is expired")
 )
 
-// Wait blocks until next activation available, or ctx is cancelled.
-func (p *Backoff) Wait(ctx context.Context) error {
+// Advance advances p's timer, returns a duration between now and next period.
+// If p reaches any limits in current cycle, Advance returns an error.
+func (p *Backoff) Advance() (time.Duration, error) {
 	if p.Limit > 0 && p.n >= p.Limit {
-		return errLimitReached
+		return 0, errLimitReached
 	}
 	d := p.advance()
 	if p.Peak > 0 && d > p.Peak {
 		d = p.Peak
 	}
+	p.age += d
+	if p.MaxAge > 0 && p.age >= p.MaxAge {
+		return 0, errExpired
+	}
+	return d, nil
+}
+
+// Wait blocks until next activation available, or ctx is cancelled.
+func (p *Backoff) Wait(ctx context.Context) error {
+	d, err := p.Advance()
+	if err != nil {
+		return err
+	}
 	select {
 	case <-time.After(d):
+		return nil
 	case <-ctx.Done():
 		return ctx.Err()
 	}
-	return nil
 }

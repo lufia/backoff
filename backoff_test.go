@@ -126,6 +126,19 @@ func TestWaitDeadline(t *testing.T) {
 	}
 }
 
+func TestAdvanceMaxAge(t *testing.T) {
+	w := Backoff{
+		Initial: tInterval,
+		MaxAge:  tInterval * 3,
+	}
+	for i := 0; i < 3; i++ {
+		if _, err := w.Advance(); err != nil {
+			return
+		}
+	}
+	t.Errorf("Age = %v, MaxAge = %v; want %v", w.age, w.MaxAge, errExpired)
+}
+
 func Example() {
 	// retryable function
 	f := func(i int) error {
@@ -158,6 +171,7 @@ func Example_limited() {
 		Initial: 100 * time.Millisecond,
 		Peak:    200 * time.Millisecond,
 		Limit:   5,
+		MaxAge:  2 * time.Second,
 	}
 	for err := f(); err != nil; err = f() {
 		if err := w.Wait(context.Background()); err != nil {
