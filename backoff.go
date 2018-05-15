@@ -28,17 +28,19 @@ type Backoff struct {
 	// Initial is initial duration of Wait().
 	Initial time.Duration
 
-	// Next is used to Wait() when is called if this is greater than zero.
-	// It will reset to zero after consumed.
-	Next time.Duration
-
 	// Limit is maximum retry count.
 	Limit int
 
 	Age time.Duration // not implemented
 
-	n int
-	d time.Duration
+	n    int           // retry count
+	d    time.Duration // most recent waiting time
+	next time.Duration
+}
+
+// SetNext sets next duration to d.
+func (p *Backoff) SetNext(d time.Duration) {
+	p.next = d
 }
 
 // weighted returns a duration in [d*0.5, d*1.5)
@@ -61,8 +63,8 @@ func (p *Backoff) advance() time.Duration {
 		p.d *= multiplier
 	}
 	p.n++
-	d := p.Next
-	p.Next = 0
+	d := p.next
+	p.next = 0
 	if d > 0 {
 		return d
 	}

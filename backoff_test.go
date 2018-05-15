@@ -100,7 +100,7 @@ func TestWaitNext(t *testing.T) {
 	}
 	for _, v := range tab {
 		if v.Next > 0 {
-			w.Next = v.Next
+			w.SetNext(v.Next)
 		}
 		testWait(t, c, &w, v.Want)
 	}
