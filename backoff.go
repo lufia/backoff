@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"math/rand"
+	"sync"
 	"time"
 )
 
@@ -36,8 +37,16 @@ type Backoff struct {
 
 	n    int           // retry count
 	d    time.Duration // most recent waiting time
-	age  time.Duration // total time
 	next time.Duration
+	t    time.Time // time when Start was called
+	once sync.Once
+}
+
+// Start starts timer for detecting that alive time of p is reached the MaxAge.
+func (p *Backoff) Start() {
+	p.once.Do(func() {
+		p.t = time.Now()
+	})
 }
 
 // SetNext sets next duration to d.
@@ -78,9 +87,14 @@ var (
 	errExpired      = errors.New("operation is expired")
 )
 
+func (p *Backoff) age() time.Duration {
+	return time.Since(p.t)
+}
+
 // Advance advances p's timer, returns a duration between now and next period.
 // If p reaches any limits in current cycle, Advance returns an error.
 func (p *Backoff) Advance() (time.Duration, error) {
+	p.Start()
 	if p.Limit > 0 && p.n >= p.Limit {
 		return 0, errLimitReached
 	}
@@ -88,8 +102,8 @@ func (p *Backoff) Advance() (time.Duration, error) {
 	if p.Peak > 0 && d > p.Peak {
 		d = p.Peak
 	}
-	p.age += d
-	if p.MaxAge > 0 && p.age >= p.MaxAge {
+	age := p.age() + d
+	if p.MaxAge > 0 && age >= p.MaxAge {
 		return 0, errExpired
 	}
 	return d, nil

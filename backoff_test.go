@@ -131,12 +131,30 @@ func TestAdvanceMaxAge(t *testing.T) {
 		Initial: tInterval,
 		MaxAge:  tInterval * 3,
 	}
+	time.Sleep(tInterval)
+	ctx := context.Background()
 	for i := 0; i < 3; i++ {
-		if _, err := w.Advance(); err != nil {
+		if err := w.Wait(ctx); err != nil {
 			return
 		}
 	}
-	t.Errorf("Age = %v, MaxAge = %v; want %v", w.age, w.MaxAge, errExpired)
+	t.Errorf("Age = %v, MaxAge = %v; want %v", w.age(), w.MaxAge, errExpired)
+}
+
+func TestStartMaxAge(t *testing.T) {
+	w := Backoff{
+		Initial: tInterval,
+		MaxAge:  tInterval * 3,
+	}
+	w.Start()
+	time.Sleep(tInterval)
+	ctx := context.Background()
+	for i := 0; i < 2; i++ {
+		if err := w.Wait(ctx); err != nil {
+			return
+		}
+	}
+	t.Errorf("Age = %v, MaxAge = %v; want %v", w.age(), w.MaxAge, errExpired)
 }
 
 func Example() {
