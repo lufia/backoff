@@ -3,6 +3,7 @@
 Backoff implements exponental backoff algorithm in Go.
 
 [![GoDoc](https://godoc.org/github.com/lufia/backoff?status.svg)](https://godoc.org/github.com/lufia/backoff)
+[![Build Status](https://travis-ci.org/lufia/backoff.svg?branch=master)](https://travis-ci.org/lufia/backoff)
 
 ## DESCRIPTION
 
