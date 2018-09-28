@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	weightDiv       = 2
+	jitter          = 0.5
 	multiplier      = 2
 	defaultInterval = 1 * time.Second
 )
@@ -56,8 +56,7 @@ func (p *Backoff) SetNext(d time.Duration) {
 
 // weighted returns a duration in [d*0.5, d*1.5)
 func weighted(d time.Duration) time.Duration {
-	// must: d >= weightDiv
-	w := d / weightDiv
+	w := time.Duration(float64(d) * jitter)
 	n := defaultRand.Int63n(w.Nanoseconds())
 	return d - w + time.Duration(n)
 }

@@ -19,7 +19,7 @@ type tRange struct {
 }
 
 func (r *tRange) weighted() (time.Duration, time.Duration) {
-	w := r.Begin / weightDiv
+	w := time.Duration(float64(r.Begin) * jitter)
 	return r.Begin - w, r.End + w
 }
 
