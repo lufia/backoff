@@ -1,4 +1,4 @@
-// Backoff implements exponental backoff algorithm.
+// Backoff implements exponential backoff algorithm.
 package backoff
 
 import (
@@ -21,7 +21,7 @@ func init() {
 	defaultRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 }
 
-// Backoff implements a variable for exponental backoff.
+// Backoff implements a variable for exponential backoff.
 type Backoff struct {
 	// Peak is maximum duration for Wait(). Zero is no limit.
 	Peak time.Duration
