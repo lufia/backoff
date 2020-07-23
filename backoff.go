@@ -82,8 +82,8 @@ func (p *Backoff) advance() time.Duration {
 }
 
 var (
-	errLimitReached = errors.New("retry limit reached")
-	errExpired      = errors.New("operation is expired")
+	ErrLimitReached = errors.New("retry limit reached")
+	ErrExpired      = errors.New("operation is expired")
 )
 
 func (p *Backoff) age() time.Duration {
@@ -95,7 +95,7 @@ func (p *Backoff) age() time.Duration {
 func (p *Backoff) Advance() (time.Duration, error) {
 	p.Start()
 	if p.Limit > 0 && p.n >= p.Limit {
-		return 0, errLimitReached
+		return 0, ErrLimitReached
 	}
 	d := p.advance()
 	if p.Peak > 0 && d > p.Peak {
@@ -103,7 +103,7 @@ func (p *Backoff) Advance() (time.Duration, error) {
 	}
 	age := p.age() + d
 	if p.MaxAge > 0 && age >= p.MaxAge {
-		return 0, errExpired
+		return 0, ErrExpired
 	}
 	return d, nil
 }
