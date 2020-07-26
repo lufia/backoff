@@ -1,6 +1,6 @@
 # backoff
 
-Backoff implements exponental backoff algorithm in Go.
+Backoff implements exponential backoff algorithm in Go.
 
 [![GoDoc](https://godoc.org/github.com/lufia/backoff?status.svg)](https://godoc.org/github.com/lufia/backoff)
 [![Build Status](https://travis-ci.org/lufia/backoff.svg?branch=master)](https://travis-ci.org/lufia/backoff)
@@ -17,7 +17,7 @@ This is simple example.
 3. 4±2s
 4. 8±4s
 
-It increases exponentally forever.
+It increases exponentially forever.
 
 ```go
 import (
