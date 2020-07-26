@@ -26,6 +26,7 @@ jobs:
       with:
         go-version: ${{ matrix.go }}
     - run: go test -race -covermode=atomic -coverprofile=prof.out
+      shell: bash
     - uses: shogo82148/actions-goveralls@v1
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
