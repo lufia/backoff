@@ -138,7 +138,7 @@ func TestAdvanceMaxAge(t *testing.T) {
 			return
 		}
 	}
-	t.Errorf("Age = %v, MaxAge = %v; want %v", w.age(), w.MaxAge, errExpired)
+	t.Errorf("Age = %v, MaxAge = %v; want %v", w.age(), w.MaxAge, ErrExpired)
 }
 
 func TestStartMaxAge(t *testing.T) {
@@ -154,7 +154,7 @@ func TestStartMaxAge(t *testing.T) {
 			return
 		}
 	}
-	t.Errorf("Age = %v, MaxAge = %v; want %v", w.age(), w.MaxAge, errExpired)
+	t.Errorf("Age = %v, MaxAge = %v; want %v", w.age(), w.MaxAge, ErrExpired)
 }
 
 func Example() {
