@@ -153,6 +153,7 @@ func TestStartMaxAge(t *testing.T) {
 		if err := w.Wait(ctx); err != nil {
 			return
 		}
+		time.Sleep(tInterval / 10) // keep this for safety
 	}
 	t.Errorf("Age = %v, MaxAge = %v; want %v", w.age(), w.MaxAge, ErrExpired)
 }
