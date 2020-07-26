@@ -82,8 +82,11 @@ func (p *Backoff) advance() time.Duration {
 }
 
 var (
+	// ErrLimitReached is the error returned when retrying count is reached to the limit.
 	ErrLimitReached = errors.New("retry limit reached")
-	ErrExpired      = errors.New("operation is expired")
+
+	// ErrExpired is the error returned when backoff's deadline is exceeded.
+	ErrExpired = errors.New("operation is expired")
 )
 
 func (p *Backoff) age() time.Duration {
