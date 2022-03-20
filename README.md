@@ -76,7 +76,7 @@ func main() {
 
 [godev-image]: https://pkg.go.dev/badge/github.com/lufia/backoff
 [godev-url]: https://pkg.go.dev/github.com/lufia/backoff
-[actions-image]: https://github.com/lufia/backoff/workflows/Test/badge.svg?branch=master
+[actions-image]: https://github.com/lufia/backoff/workflows/Test/badge.svg?branch=main
 [actions-url]: https://github.com/lufia/backoff/actions?workflow=Test
 [coveralls-image]: https://coveralls.io/repos/github/lufia/backoff/badge.svg
 [coveralls-url]: https://coveralls.io/github/lufia/backoff
