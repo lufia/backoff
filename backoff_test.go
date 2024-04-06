@@ -52,35 +52,35 @@ func TestWaitDefaultInterval(t *testing.T) {
 }
 
 func TestWait(t *testing.T) {
-	tab := [][]time.Duration{
+	tests := [][]time.Duration{
 		{tInterval},
 		{tInterval, tInterval * multiplier},
 		{tInterval, tInterval * multiplier, tInterval * multiplier * 2},
 	}
-	c := context.Background()
-	for _, a := range tab {
+	ctx := context.Background()
+	for _, tt := range tests {
 		var w Backoff
 		w.Initial = tInterval
-		for _, d := range a {
-			testWait(t, c, &w, d)
+		for _, d := range tt {
+			testWait(t, ctx, &w, d)
 		}
 	}
 }
 
 func TestWaitWithPeak(t *testing.T) {
 	const peak = tInterval + tInterval/2
-	tab := [][]time.Duration{
+	tests := [][]time.Duration{
 		{tInterval},
 		{tInterval, peak},
 		{tInterval, peak, peak},
 	}
-	c := context.Background()
-	for _, a := range tab {
+	ctx := context.Background()
+	for _, tt := range tests {
 		var w Backoff
 		w.Initial = tInterval
 		w.Peak = peak
-		for _, d := range a {
-			testWait(t, c, &w, d)
+		for _, d := range tt {
+			testWait(t, ctx, &w, d)
 		}
 	}
 }
@@ -88,9 +88,9 @@ func TestWaitWithPeak(t *testing.T) {
 func TestWaitNext(t *testing.T) {
 	var w Backoff
 	w.Initial = 10 * time.Millisecond
-	c := context.Background()
+	ctx := context.Background()
 
-	tab := []struct {
+	tests := []struct {
 		Next time.Duration
 		Want time.Duration
 	}{
@@ -98,11 +98,11 @@ func TestWaitNext(t *testing.T) {
 		{Want: 5 * time.Millisecond, Next: 5 * time.Millisecond},
 		{Want: w.Initial * 4},
 	}
-	for _, v := range tab {
+	for _, v := range tests {
 		if v.Next > 0 {
 			w.SetNext(v.Next)
 		}
-		testWait(t, c, &w, v.Want)
+		testWait(t, ctx, &w, v.Want)
 	}
 }
 
@@ -117,7 +117,7 @@ func TestWaitDeadline(t *testing.T) {
 
 	err := w.Wait(ctx)
 	if err == nil {
-		t.Errorf("Wait(ctx) must return an error that is deadline reached")
+		t.Errorf("Wait(ctx) must return an error that mean deadline reached")
 	}
 	d := time.Since(t0)
 	r := &tRange{Begin: timeout, End: timeout + tAccuracy}
