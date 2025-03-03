@@ -4,7 +4,6 @@ Backoff implements exponential backoff algorithm in Go.
 
 [![GoDev][godev-image]][godev-url]
 [![Actions Status][actions-image]][actions-url]
-[![Coverage Status][coveralls-image]][coveralls-url]
 
 ## DESCRIPTION
 
@@ -78,5 +77,3 @@ func main() {
 [godev-url]: https://pkg.go.dev/github.com/lufia/backoff
 [actions-image]: https://github.com/lufia/backoff/workflows/Test/badge.svg?branch=main
 [actions-url]: https://github.com/lufia/backoff/actions?workflow=Test
-[coveralls-image]: https://coveralls.io/repos/github/lufia/backoff/badge.svg
-[coveralls-url]: https://coveralls.io/github/lufia/backoff
