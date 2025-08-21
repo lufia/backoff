@@ -7,11 +7,11 @@ on:
   pull_request:
 jobs:
   test:
-    uses: lufia/workflows/.github/workflows/go-test.yml@v0.7.0
-    with:
+    uses: lufia/workflows/.github/workflows/go-test.yml@65fcecee196960dacd2ee5bd97a822d28e53411f # v0.7.1
+    #with:
       # TODO(lufia): TestWaitDeadline is broken on Windows.
       #
       # Go 1.23 will ship CL 488675, high res timer on Windows,
       # so I guess that issue may be fixed.
       # https://github.com/golang/go/issues/44343
-      os-versions: '["ubuntu-22.04", "macos-13"]'
+      #os-versions: '["ubuntu-22.04", "macos-13"]'
