@@ -5,33 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"testing/synctest"
 	"time"
 )
 
 const (
-	tAccuracy = 10 * time.Millisecond
 	tInterval = 10 * time.Millisecond
 )
-
-type tRange struct {
-	Begin time.Duration
-	End   time.Duration
-}
-
-func (r *tRange) weighted() (time.Duration, time.Duration) {
-	w := time.Duration(float64(r.Begin) * jitter)
-	return r.Begin - w, r.End + w
-}
-
-func (r *tRange) String() string {
-	bp, ep := r.weighted()
-	return fmt.Sprintf("%v..%v", bp, ep)
-}
-
-func (r *tRange) In(d time.Duration) bool {
-	bp, ep := r.weighted()
-	return d >= bp && d < ep
-}
 
 func testWait(t *testing.T, c context.Context, w *Backoff, v time.Duration) {
 	t.Helper()
@@ -39,123 +19,131 @@ func testWait(t *testing.T, c context.Context, w *Backoff, v time.Duration) {
 	if err := w.Wait(c); err != nil {
 		t.Fatalf("failed to Wait(): %v", err)
 	}
-	d := time.Since(t0)
-	r := &tRange{Begin: v, End: v + tAccuracy}
-	if !r.In(d) {
-		t.Errorf("Wait(): ellapsed %v; want %v", d, r)
+	bp := time.Duration(float64(v) * jitter)
+	ep := bp + v
+	if d := time.Since(t0); d < bp || d >= ep {
+		t.Errorf("Wait(): ellapsed %v; want %v±%v", d, v, v/2)
 	}
 }
 
 func TestWaitDefaultInterval(t *testing.T) {
-	var w Backoff
-	testWait(t, context.Background(), &w, defaultInterval)
+	synctest.Test(t, func(t *testing.T) {
+		var w Backoff
+		testWait(t, t.Context(), &w, defaultInterval)
+	})
 }
 
 func TestWait(t *testing.T) {
-	tests := [][]time.Duration{
-		{tInterval},
-		{tInterval, tInterval * multiplier},
-		{tInterval, tInterval * multiplier, tInterval * multiplier * 2},
-	}
-	ctx := context.Background()
-	for _, tt := range tests {
-		var w Backoff
-		w.Initial = tInterval
-		for _, d := range tt {
-			testWait(t, ctx, &w, d)
+	synctest.Test(t, func(t *testing.T) {
+		tests := [][]time.Duration{
+			{tInterval},
+			{tInterval, tInterval * multiplier},
+			{tInterval, tInterval * multiplier, tInterval * multiplier * 2},
 		}
-	}
+		for _, tt := range tests {
+			var w Backoff
+			w.Initial = tInterval
+			for _, d := range tt {
+				testWait(t, t.Context(), &w, d)
+			}
+		}
+	})
 }
 
 func TestWaitWithPeak(t *testing.T) {
-	const peak = tInterval + tInterval/2
-	tests := [][]time.Duration{
-		{tInterval},
-		{tInterval, peak},
-		{tInterval, peak, peak},
-	}
-	ctx := context.Background()
-	for _, tt := range tests {
-		var w Backoff
-		w.Initial = tInterval
-		w.Peak = peak
-		for _, d := range tt {
-			testWait(t, ctx, &w, d)
+	synctest.Test(t, func(t *testing.T) {
+		const peak = tInterval + tInterval/2
+		tests := [][]time.Duration{
+			{tInterval},
+			{tInterval, peak},
+			{tInterval, peak, peak},
 		}
-	}
+		for _, tt := range tests {
+			var w Backoff
+			w.Initial = tInterval
+			w.Peak = peak
+			for _, d := range tt {
+				testWait(t, t.Context(), &w, d)
+			}
+		}
+	})
 }
 
 func TestWaitNext(t *testing.T) {
-	var w Backoff
-	w.Initial = 10 * time.Millisecond
-	ctx := context.Background()
+	synctest.Test(t, func(t *testing.T) {
+		var w Backoff
+		w.Initial = 10 * time.Millisecond
 
-	tests := []struct {
-		Next time.Duration
-		Want time.Duration
-	}{
-		{Want: w.Initial},
-		{Want: 5 * time.Millisecond, Next: 5 * time.Millisecond},
-		{Want: w.Initial * 4},
-	}
-	for _, v := range tests {
-		if v.Next > 0 {
-			w.SetNext(v.Next)
+		tests := []struct {
+			Next time.Duration
+			Want time.Duration
+		}{
+			{Want: w.Initial},
+			{Want: 5 * time.Millisecond, Next: 5 * time.Millisecond},
+			{Want: w.Initial * 4},
 		}
-		testWait(t, ctx, &w, v.Want)
-	}
+		for _, v := range tests {
+			if v.Next > 0 {
+				w.SetNext(v.Next)
+			}
+			testWait(t, t.Context(), &w, v.Want)
+		}
+	})
 }
 
 func TestWaitDeadline(t *testing.T) {
-	t0 := time.Now()
-	timeout := tInterval / 4
+	synctest.Test(t, func(t *testing.T) {
+		t0 := time.Now()
+		timeout := 100 * time.Millisecond
 
-	var w Backoff
-	w.Initial = tInterval
-	ctx, cancel := context.WithDeadline(context.Background(), t0.Add(timeout))
-	defer cancel()
+		var w Backoff
+		w.Initial = 500 * time.Millisecond
+		ctx, cancel := context.WithDeadline(t.Context(), t0.Add(timeout))
+		t.Cleanup(cancel)
 
-	err := w.Wait(ctx)
-	if err == nil {
-		t.Errorf("Wait(ctx) must return an error that mean deadline reached")
-	}
-	d := time.Since(t0)
-	r := &tRange{Begin: timeout, End: timeout + tAccuracy}
-	if !r.In(d) {
-		t.Errorf("Wait(%v): ellapsed %v; want %v", timeout, d, r)
-	}
+		if err := w.Wait(ctx); err == nil || !errors.Is(err, ctx.Err()) {
+			t.Errorf("Wait(ctx) must return an error that mean deadline reached")
+		}
+		d := time.Since(t0)
+		if d != timeout {
+			t.Errorf("Wait() should cancel right now when ctx was cancelled: ellapsed %v; want %v", d, timeout)
+		}
+	})
 }
 
 func TestAdvanceMaxAge(t *testing.T) {
-	w := Backoff{
-		Initial: tInterval,
-		MaxAge:  tInterval * 3,
-	}
-	time.Sleep(tInterval)
-	ctx := context.Background()
-	for i := 0; i < 3; i++ {
-		if err := w.Wait(ctx); err != nil {
-			return
+	// Wait should return ErrExpired when due to reached for MaxAge.
+	synctest.Test(t, func(t *testing.T) {
+		w := Backoff{
+			Initial: tInterval,
+			MaxAge:  tInterval * 3,
 		}
-	}
-	t.Errorf("Age = %v, MaxAge = %v; want %v", w.age(), w.MaxAge, ErrExpired)
+		time.Sleep(tInterval)
+		for i := 0; i < 3; i++ {
+			if err := w.Wait(t.Context()); !errors.Is(err, ErrExpired) {
+				return
+			}
+		}
+		t.Errorf("Age = %v, MaxAge = %v; want %v", w.age(), w.MaxAge, ErrExpired)
+	})
 }
 
 func TestStartMaxAge(t *testing.T) {
-	w := Backoff{
-		Initial: tInterval,
-		MaxAge:  tInterval * 3,
-	}
-	w.Start()
-	time.Sleep(tInterval)
-	ctx := context.Background()
-	for i := 0; i < 2; i++ {
-		if err := w.Wait(ctx); err != nil {
-			return
+	// Wait should return ErrExpired when due to reached for MaxAge; it starts of Start().
+	synctest.Test(t, func(t *testing.T) {
+		w := Backoff{
+			Initial: tInterval,
+			MaxAge:  tInterval * 3,
 		}
-		time.Sleep(tInterval / 10) // keep this for safety
-	}
-	t.Errorf("Age = %v, MaxAge = %v; want %v", w.age(), w.MaxAge, ErrExpired)
+		w.Start()
+		time.Sleep(tInterval)
+		for i := 0; i < 2; i++ {
+			if err := w.Wait(t.Context()); !errors.Is(err, ErrExpired) {
+				return
+			}
+		}
+		t.Errorf("Age = %v, MaxAge = %v; want %v", w.age(), w.MaxAge, ErrExpired)
+	})
 }
 
 func Example() {
