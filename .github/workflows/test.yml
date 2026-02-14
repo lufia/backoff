@@ -1,5 +1,8 @@
 name: Test
 
+permissions:
+  contents: read
+
 on:
   push:
     branches:
@@ -7,11 +10,4 @@ on:
   pull_request:
 jobs:
   test:
-    uses: lufia/workflows/.github/workflows/go-test.yml@11481ca31250b76912caa52ca686f4cc48284f2c # v0.8.1
-    #with:
-      # TODO(lufia): TestWaitDeadline is broken on Windows.
-      #
-      # Go 1.23 will ship CL 488675, high res timer on Windows,
-      # so I guess that issue may be fixed.
-      # https://github.com/golang/go/issues/44343
-      #os-versions: '["ubuntu-22.04", "macos-13"]'
+    uses: lufia/workflows/.github/workflows/go-test.yml@862187051b3e08cb09915314465eeec8cfefe569 # v0.9.0
